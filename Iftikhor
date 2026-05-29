@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Kaloriya Skaneri & Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-900 flex justify-center items-center min-h-screen p-2 sm:p-4">
+
+    <div class="w-full max-w-md bg-slate-950 rounded-[50px] shadow-2xl overflow-hidden border-[10px] border-slate-800 relative h-[860px] flex flex-col">
+        
+        <div class="bg-slate-950 text-slate-400 px-8 pt-3 pb-2 flex justify-between text-xs font-semibold select-none z-50">
+            <span>9:41</span>
+            <div class="w-24 h-4 bg-slate-800 rounded-full absolute left-1/2 -translate-x-1/2 top-2"></div>
+            <div class="flex space-x-2">
+                <span>📶</span>
+                <span>🔋 100%</span>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto no-scrollbar bg-slate-50 flex flex-col relative">
+            
+            <div id="dashboard-screen" class="p-5 flex-1 flex flex-col pb-24">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Xush kelibsiz 👋</p>
+                        <h1 class="text-2xl font-black text-slate-800">Iftikhor T.</h1>
+                    </div>
+                    <div class="w-11 h-11 bg-gradient-to-tr from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/30">
+                        IT
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[32px] p-6 text-white shadow-xl mb-6 relative overflow-hidden">
+                    <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-xl"></div>
+                    <h2 class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">Bugungi Balans</h2>
+                    <div class="flex items-baseline space-x-2 mb-4">
+                        <span id="today-calories" class="text-5xl font-black text-white">0</span>
+                        <span class="text-sm text-slate-400 font-medium">/ 2500 kkal</span>
+                    </div>
+                    <div class="w-full bg-slate-700/50 h-3 rounded-full overflow-hidden p-[2px]">
+                        <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs mt-3 text-slate-400 font-medium">
+                        <span id="calories-left">Yana 2500 kkal kerak</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 mb-6">
+                    <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] font-bold text-orange-500 uppercase">Oqsil</p>
+                        <p id="macro-protein" class="text-base font-black text-slate-700 mt-0.5">0g</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] font-bold text-blue-500 uppercase">Uglevod</p>
+                        <p id="macro-carbs" class="text-base font-black text-slate-700 mt-0.5">0g</p>
+                    </div>
+                    <div class="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm text-center">
+                        <p class="text-[10px] font-bold text-amber-500 uppercase">Yog'</p>
+                        <p id="macro-fat" class="text-base font-black text-slate-700 mt-0.5">0g</p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-100 rounded-[32px] p-5 shadow-sm mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-800 text-sm">Haftalik Tahlil</h3>
+                        <span class="text-[10px] text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full font-bold uppercase tracking-wider">Real-Time</span>
+                    </div>
+                    <div class="relative w-full h-44">
+                        <canvas id="calorieChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-slate-800 text-sm">Bugungi Taomlar Tarixi</h3>
+                        <button onclick="clearTodayData()" class="text-xs text-rose-500 font-bold bg-rose-50 hover:bg-rose-100 px-3 py-1 rounded-full transition-colors">
+                            🗑️ Tarixni Tozalash
+                        </button>
+                    </div>
+                    <div id="food-list" class="space-y-2.5">
+                        <div id="empty-state" class="text-center py-8 text-slate-400 text-xs font-medium bg-slate-100 rounded-2xl border-2 border-dashed border-slate-200">
+                            Hech qanday taom skanerlanmadi. Quyidagi AI SCAN tugmasini bosing!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="scanner-screen" class="hidden p-5 flex-1 flex flex-col bg-slate-900 text-white pb-24">
+                <h2 class="text-xl font-black text-center mb-1">AI Taom Skaneri</h2>
+                <p class="text-xs text-center text-slate-400 mb-6">Rasmni o'qish jarayoni va Gemini AI javob simulyatsiyasi</p>
+
+                <div class="w-full h-64 bg-black rounded-[32px] relative overflow-hidden border-2 border-slate-700 flex items-center justify-center">
+                    <div class="absolute left-0 right-0 h-1 bg-emerald-400 opacity-80 shadow-[0_0_15px_#10b981] animate-[bounce_2s_infinite]"></div>
+                    <div class="absolute inset-8 border-2 border-dashed border-white/20 rounded-2xl"></div>
+                    <span id="camera-placeholder" class="text-5xl">📸</span>
+                </div>
+
+                <div id="ai-loader" class="hidden mt-6 text-center">
+                    <div class="inline-block w-8 h-8 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="text-xs text-emerald-400 font-bold mt-2 tracking-widest uppercase animate-pulse">Gemini AI tasvirni tahlil qilmoqda...</p>
+                </div>
+
+                <div id="demo-section" class="mt-6 flex-1 flex flex-col justify-end">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Skanerlash uchun taomni tanlang:</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="simulateAIScan('palov')" class="bg-slate-800 hover:bg-slate-700 p-3 rounded-2xl text-left border border-slate-700/50 flex items-center space-x-3 transition active:scale-95">
+                            <span class="text-2xl">🍲</span>
+                            <div>
+                                <h5 class="text-xs font-bold text-white">Osh (Palov)</h5>
+                                <p class="text-[10px] text-slate-400">+780 kkal</p>
+                            </div>
+                        </button>
+                        <button onclick="simulateAIScan('somsa')" class="bg-slate-800 hover:bg-slate-700 p-3 rounded-2xl text-left border border-slate-700/50 flex items-center space-x-3 transition active:scale-95">
+                            <span class="text-2xl">🥐</span>
+                            <div>
+                                <h5 class="text-xs font-bold text-white">Somsa</h5>
+                                <p class="text-[10px] text-slate-400">+520 kkal</p>
+                            </div>
+                        </button>
+                        <button onclick="simulateAIScan('salat')" class="bg-slate-800 hover:bg-slate-700 p-3 rounded-2xl text-left border border-slate-700/50 flex items-center space-x-3 transition active:scale-95">
+                            <span class="text-2xl">🥗</span>
+                            <div>
+                                <h5 class="text-xs font-bold text-white">Sezar Salati</h5>
+                                <p class="text-[10px] text-slate-400">+310 kkal</p>
+                            </div>
+                        </button>
+                        <button onclick="simulateAIScan('tort')" class="bg-slate-800 hover:bg-slate-700 p-3 rounded-2xl text-left border border-slate-700/50 flex items-center space-x-3 transition active:scale-95">
+                            <span class="text-2xl">🍰</span>
+                            <div>
+                                <h5 class="text-xs font-bold text-white">Shokoladli Tort</h5>
+                                <p class="text-[10px] text-slate-400">+450 kkal</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-100 px-12 py-4 flex justify-between items-center z-50">
+            <button id="nav-dash" onclick="switchScreen('dash')" class="flex flex-col items-center space-y-1 text-emerald-500 transition-colors">
+                <span class="text-xl">📊</span>
+                <span class="text-[10px] font-bold">Dashboard</span>
+            </button>
+            
+            <button id="nav-scan" onclick="switchScreen('scan')" class="flex flex-col items-center -mt-10">
+                <div class="w-16 h-16 bg-gradient-to-tr from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white text-2xl shadow-xl shadow-emerald-500/30 border-4 border-slate-50 active:scale-95 transition-transform">
+                    📸
+                </div>
+                <span id="nav-scan-text" class="text-[10px] font-black text-slate-500 mt-1">AI SCAN</span>
+            </button>
+            
+            <button class="flex flex-col items-center space-y-1 text-slate-300 cursor-not-allowed">
+                <span class="text-xl">⚙️</span>
+                <span class="text-[10px] font-bold">Sozlamalar</span>
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. LOCAL STORAGE O'QISh ---
+        let appState = JSON.parse(localStorage.getItem('ai_calorie_state')) || {
+            todayCalories: 0,
+            macros: { protein: 0, carbs: 0, fat: 0 },
+            weeklyHistory: [1850, 2100, 1550, 1950, 2200, 1700, 0], // Dush-Yaksh tarixi
+            todayFoods: []
+        };
+
+        function saveToLocalStorage() {
+            localStorage.setItem('ai_calorie_state', JSON.stringify(appState));
+        }
+
+        // --- 2. CHART.JS SOZLAMALARI ---
+        const ctx = document.getElementById('calorieChart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 150);
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+        gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+        const calorieChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sha', 'Ya'],
+                datasets: [{
+                    data: appState.weeklyHistory,
+                    borderColor: '#10b981',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#10b981',
+                    fill: true,
+                    backgroundColor: gradient,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { display: false }, ticks: { display: false } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#64748b' } }
+                }
+            }
+        });
+
+        // --- INTERFEYSNI LOCALSTORAGE BILAN SINXRONLAShTIRISH ---
+        function updateDashboardUI() {
+            // Kaloriyalar matni
+            document.getElementById('today-calories').innerText = appState.todayCalories.toLocaleString();
+            
+            const limit = 2500;
+            const left = limit - appState.todayCalories;
+            document.getElementById('calories-left').innerText = left > 0 ? `Yana ${left} kkal kerak` : "Kunlik norma bajarildi! 🎉";
+            
+            // Progress panel hisobi
+            const percent = Math.min((appState.todayCalories / limit) * 100, 100);
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            document.getElementById('progress-percent').innerText = `${Math.round(percent)}%`;
+
+            // Makronutriyentlar matni
+            document.getElementById('macro-protein').innerText = `${appState.macros.protein}g`;
+            document.getElementById('macro-carbs').innerText = `${appState.macros.carbs}g`;
+            document.getElementById('macro-fat').innerText = `${appState.macros.fat}g`;
+
+            // DINAMIK GRAFIK: Bugungi kkalni grafikning oxirgi (Yakshanba) nuqtasiga ulash
+            appState.weeklyHistory[6] = appState.todayCalories;
+            calorieChart.data.datasets[0].data = appState.weeklyHistory;
+            calorieChart.update();
+
+            // Tarix ro'yxati generatsiyasi
+            const foodList = document.getElementById('food-list');
+            const emptyState = document.getElementById('empty-state');
+            
+            // Eskilarini tozalash
+            const dynamicItems = foodList.querySelectorAll('.dynamic-food-item');
+            dynamicItems.forEach(item => item.remove());
+
+            if (appState.todayFoods.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                appState.todayFoods.forEach(food => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = "dynamic-food-item flex justify-between items-center bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm";
+                    itemDiv.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xl">${food.icon}</span>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-700">${food.name}</h4>
+                                <p class="text-[10px] text-slate-400">${food.time} • ~${food.weight}g</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-xl">+${food.calories} kkal</span>
+                    `;
+                    foodList.insertBefore(itemDiv, foodList.firstChild);
+                });
+            }
+        }
+
+        // --- 3. TO'LIQ UI/UX NAVIGATSIYASI ---
+        function switchScreen(target) {
+            const dashScreen = document.getElementById('dashboard-screen');
+            const scanScreen = document.getElementById('scanner-screen');
+            const navDash = document.getElementById('nav-dash');
+            const navScanText = document.getElementById('nav-scan-text');
+
+            if (target === 'dash') {
+                dashScreen.classList.remove('hidden');
+                scanScreen.classList.add('hidden');
+                navDash.className = "flex flex-col items-center space-y-1 text-emerald-500 transition-colors";
+                navScanText.className = "text-[10px] font-black text-slate-500 mt-1";
+            } else {
+                dashScreen.classList.add('hidden');
+                scanScreen.classList.remove('hidden');
+                navDash.className = "flex flex-col items-center space-y-1 text-slate-400 transition-colors";
+                navScanText.className = "text-[10px] font-black text-emerald-400 mt-1";
+            }
+        }
+
+        // --- 2 SONIYALIK ANIMATSIYA BILAN SKANERLASH SIMULYATSIYASI ---
+        const mockDatabase = {
+            palov: { name: "To'y Palovi", calories: 780, weight: 350, icon: "🍲", macros: { protein: 28, carbs: 85, fat: 32 } },
+            somsa: { name: "Go'shtli Somsa", calories: 520, weight: 200, icon: "🥐", macros: { protein: 18, carbs: 54, fat: 24 } },
+            salat: { name: "Sezar Salati", calories: 310, weight: 250, icon: "🥗", macros: { protein: 22, carbs: 12, fat: 16 } },
+            tort: { name: "Shokoladli Tort", calories: 450, weight: 120, icon: "🍰", macros: { protein: 6, carbs: 58, fat: 21 } }
+        };
+
+        function simulateAIScan(key) {
+            const loader = document.getElementById('ai-loader');
+            const demoSection = document.getElementById('demo-section');
+            const placeholder = document.getElementById('camera-placeholder');
+
+            // 2 soniyalik animatsiyani yoqish
+            loader.classList.remove('hidden');
+            demoSection.classList.add('opacity-30', 'pointer-events-none');
+            placeholder.innerText = "🔍";
+
+            setTimeout(() => {
+                const data = mockDatabase[key];
+                const now = new Date();
+                const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+                // Ma'lumotlarni yangilash
+                appState.todayCalories += data.calories;
+                appState.macros.protein += data.macros.protein;
+                appState.macros.carbs += data.macros.carbs;
+                appState.macros.fat += data.macros.fat;
+
+                appState.todayFoods.push({
+                    name: data.name,
+                    calories: data.calories,
+                    weight: data.weight,
+                    icon: data.icon,
+                    time: timeStr
+                });
+
+                // LocalStorage'ga yozish va UI'ni yangilash
+                saveToLocalStorage();
+                updateDashboardUI();
+
+                // Animatsiyani to'xtatish
+                loader.classList.add('hidden');
+                demoSection.classList.remove('opacity-30', 'pointer-events-none');
+                placeholder.innerText = "📸";
+
+                // Avtomatik Dashboard ekraniga qaytarish
+                switchScreen('dash');
+            }, 2000); // 2 soniya kutish vaqt
+        }
+
+        // --- 4. TOZALASH FUNKSIYASI ---
+        function clearTodayData() {
+            if (confirm("Bugungi kiritilgan barcha kaloriya ma'lumotlarini o'chirishni xohlaysizmi?")) {
+                appState.todayCalories = 0;
+                appState.macros = { protein: 0, carbs: 0, fat: 0 };
+                appState.todayFoods = [];
+                appState.weeklyHistory[6] = 0; // Grafikdagi bugungi kunni ham nollash
+                
+                saveToLocalStorage();
+                updateDashboardUI();
+            }
+        }
+
+        // Ilovani dastlabki ishga tushirish
+        updateDashboardUI();
+    </script>
+</body>
+</html>
